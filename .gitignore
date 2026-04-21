@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+src/data/credential.json
+src/data/token-holding.json
+log/
+src/data/wallet-holdings-sync.json
+*.log
