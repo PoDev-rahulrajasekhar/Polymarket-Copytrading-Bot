@@ -18,7 +18,7 @@ import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs";
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";
 import type { Message } from "@polymarket/real-time-data-client";
 import type { TradePayload } from "../utils/types";
-import { env } from "../config/env";
+import { env, POLYMARKET_COLLATERAL_SHORT } from "../config/env";
 
 // Setup log directory and file
 const LOG_DIR = resolve(process.cwd(), "log");
@@ -56,7 +56,7 @@ Outcome: ${trade.outcome || "N/A"}
 Side: ${side}
 Price: $${trade.price.toFixed(4)}
 Size: ${trade.size.toFixed(2)} tokens
-Total: $${totalAmount} USDC
+Total: $${totalAmount} ${POLYMARKET_COLLATERAL_SHORT} (notional)
 Token ID: ${trade.asset}
 Condition ID: ${trade.conditionId}
 Transaction: ${trade.transactionHash}
@@ -121,10 +121,10 @@ function displayTrade(trade: TradePayload) {
     
     if (side === "BUY") {
         const totalCost = trade.price * trade.size;
-        console.log(`   Total Cost: $${totalCost.toFixed(2)} USDC`);
+        console.log(`   Total Cost: $${totalCost.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`);
     } else {
         const totalReceived = trade.price * trade.size;
-        console.log(`   Total Received: $${totalReceived.toFixed(2)} USDC`);
+        console.log(`   Total Received: $${totalReceived.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`);
     }
     
     // Token Information

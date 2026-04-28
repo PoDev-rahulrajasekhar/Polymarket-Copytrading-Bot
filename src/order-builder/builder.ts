@@ -1,12 +1,12 @@
-import { ClobClient, OrderType, Side, AssetType } from "@polymarket/clob-client";
-import type { UserMarketOrder, CreateOrderOptions } from "@polymarket/clob-client";
+import { ClobClient, OrderType, Side, AssetType } from "@polymarket/clob-client-v2";
+import type { UserMarketOrderV2, CreateOrderOptions } from "@polymarket/clob-client-v2";
 import type { TradePayload } from "../utils/types";
 import type { CopyTradeOptions, CopyTradeResult } from "./types";
 import { tradeToMarketOrder, getDefaultOrderOptions } from "./helpers";
 import { addHoldings, getHoldings, removeHoldings } from "../utils/holdings";
 import { approveTokensAfterBuy, updateClobBalanceAllowance } from "../security/allowance";
 import { validateBuyOrderBalance, validateSellOrderBalance, displayWalletBalance } from "../utils/balance";
-import { env } from "../config/env";
+import { env, POLYMARKET_COLLATERAL_SHORT } from "../config/env";
 
 /**
  * Order builder for copying trades
@@ -61,7 +61,7 @@ export class TradeOrderBuilder {
                 }
                 
                 // For SELL, amount is in shares
-                const marketOrder: UserMarketOrder = {
+                const marketOrder: UserMarketOrderV2 = {
                     tokenID: tokenId,
                     side: Side.SELL,
                     amount: sellAmount,
@@ -113,7 +113,7 @@ export class TradeOrderBuilder {
                 };
             }
 
-            // For BUY orders: build order, then place (skip balance/allowance when fixed USDC for speed)
+            // For BUY orders: build order, then place (skip balance/allowance when fixed pUSD for speed)
             const marketOrder = tradeToMarketOrder(options);
             const fastPath = options.orderAmountUsdc != null && options.orderAmountUsdc > 0;
 
@@ -127,7 +127,7 @@ export class TradeOrderBuilder {
                 const balanceCheck = await validateBuyOrderBalance(this.client, marketOrder.amount);
                 if (!balanceCheck.valid) {
                     if (balanceCheck.available <= 0) {
-                        return { success: false, error: `Insufficient USDC. Available: ${balanceCheck.available}` };
+                        return { success: false, error: `Insufficient ${POLYMARKET_COLLATERAL_SHORT}. Available: ${balanceCheck.available}` };
                     }
                     marketOrder.amount = balanceCheck.available;
                 }
@@ -158,7 +158,7 @@ export class TradeOrderBuilder {
             }
 
             // Get the actual filled amount from response
-            // For BUY orders: makingAmount = USDC spent, takingAmount = tokens received
+            // For BUY orders: makingAmount = pUSD spent, takingAmount = tokens received
             const tokensReceived = response.takingAmount 
                 ? parseFloat(response.takingAmount) 
                 : 0;
@@ -169,7 +169,7 @@ export class TradeOrderBuilder {
                 console.log(`✅ Added ${tokensReceived} tokens to holdings: ${marketId} -> ${tokenId}`);
             } else {
                 // Fallback: estimate from order amount if response doesn't have takingAmount
-                // For BUY: amount is USDC, so tokens = USDC / price
+                // For BUY: amount is pUSD, so tokens = pUSD / price
                 const estimatedTokens = marketOrder.amount / (trade.price || 1);
                 if (estimatedTokens > 0) {
                     addHoldings(marketId, tokenId, estimatedTokens);
@@ -243,7 +243,7 @@ export class TradeOrderBuilder {
             price?: number;
         }
     ): Promise<CopyTradeResult> {
-        const marketOrder: UserMarketOrder = {
+        const marketOrder: UserMarketOrderV2 = {
             tokenID,
             side: Side.BUY,
             amount,
@@ -291,7 +291,7 @@ export class TradeOrderBuilder {
             price?: number;
         }
     ): Promise<CopyTradeResult> {
-        const marketOrder: UserMarketOrder = {
+        const marketOrder: UserMarketOrderV2 = {
             tokenID,
             side: Side.SELL,
             amount,

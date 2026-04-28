@@ -19,7 +19,7 @@ import { Contract } from "@ethersproject/contracts";
 import { BigNumber } from "@ethersproject/bignumber";
 import { formatEther } from "@ethersproject/units";
 import { hexZeroPad } from "@ethersproject/bytes";
-import { Chain, getContractConfig } from "@polymarket/clob-client";
+import { Chain, getContractConfig } from "@polymarket/clob-client-v2";
 import { writeFileSync } from "fs";
 import { getAllHoldings, TokenHoldings } from "../utils/holdings";
 import { env, getRpcUrl } from "../config/env";

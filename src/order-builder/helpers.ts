@@ -1,4 +1,4 @@
-import { Side, OrderType, UserMarketOrder, CreateOrderOptions } from "@polymarket/clob-client";
+import { Side, OrderType, type UserMarketOrderV2, CreateOrderOptions } from "@polymarket/clob-client-v2";
 import type { TradePayload } from "../utils/types";
 import type { CopyTradeOptions } from "./types";
 
@@ -55,20 +55,19 @@ export function calculateMarketOrderAmount(
 }
 
 /**
- * Convert a trade payload to a UserMarketOrder
+ * Convert a trade payload to a UserMarketOrderV2
  */
-export function tradeToMarketOrder(options: CopyTradeOptions): UserMarketOrder {
-    const { trade, sizeMultiplier = 1.0, maxAmount, orderSizeTokens, orderAmountUsdc, orderType = OrderType.FAK, feeRateBps, tickSize = "0.01" } = options;
+export function tradeToMarketOrder(options: CopyTradeOptions): UserMarketOrderV2 {
+    const { trade, sizeMultiplier = 1.0, maxAmount, orderSizeTokens, orderAmountUsdc, orderType = OrderType.FAK, tickSize = "0.01" } = options;
     const side = parseTradeSide(trade.side);
     const amount = calculateMarketOrderAmount(trade, sizeMultiplier, maxAmount, orderSizeTokens, orderAmountUsdc);
     const price = clampPrice(trade.price ?? 0, tickSize);
-    const marketOrder: UserMarketOrder = {
+    const marketOrder: UserMarketOrderV2 = {
         tokenID: trade.asset,
         side,
         amount,
         price,
         orderType,
-        ...(feeRateBps !== undefined && { feeRateBps }),
     };
     return marketOrder;
 }

@@ -5,9 +5,9 @@
  * Prints:
  * - EOA address (from PRIVATE_KEY)
  * - Polymarket proxy wallet address (on-chain)
- * - CLOB USDC balance + allowance
- * - Available USDC (balance minus reserved in open BUY orders)
- * - On-chain USDC balances (EOA + proxy wallet)
+ * - CLOB Polymarket USD (pUSD) balance + allowance
+ * - Available pUSD (balance minus reserved in open BUY orders)
+ * - On-chain pUSD balances (EOA + proxy wallet)
  *
  * Usage:
  *   npm run balance
@@ -15,8 +15,8 @@
  */
 
 import { Wallet } from "@ethersproject/wallet";
-import { AssetType, Chain } from "@polymarket/clob-client";
-import { env } from "../config/env";
+import { AssetType, Chain } from "@polymarket/clob-client-v2";
+import { env, POLYMARKET_COLLATERAL_LABEL, POLYMARKET_COLLATERAL_SHORT } from "../config/env";
 import { getClobClient } from "../providers/clobclient";
 import { displayWalletBalance, getAvailableBalance } from "../utils/balance";
 import { getUsdcBalance } from "../utils/usdcBalance";
@@ -53,18 +53,18 @@ async function main() {
 
     console.log("═══════════════════════════════════════");
 
-    // CLOB balance/allowance + available USDC
+    // CLOB balance/allowance + available collateral
     try {
         const clob = await getClobClient();
         await displayWalletBalance(clob);
         const available = await getAvailableBalance(clob, AssetType.COLLATERAL);
-        console.log(`Available USDC (minus open BUY orders): ${available.toFixed(6)}`);
+        console.log(`Available ${POLYMARKET_COLLATERAL_SHORT} (minus open BUY orders): ${available.toFixed(6)}`);
     } catch (e) {
         console.log(`⚠️  Could not fetch CLOB balance/allowance: ${e instanceof Error ? e.message : String(e)}`);
         console.log("   (Tip: ensure src/data/credential.json exists and CLOB credentials are valid.)");
     }
 
-    // On-chain USDC balances
+    // On-chain pUSD balances
     try {
         const [eoaUsdc, proxyUsdc] = await Promise.all([
             getUsdcBalance(eoa.address, chainId),
@@ -72,13 +72,13 @@ async function main() {
         ]);
 
         console.log("═══════════════════════════════════════");
-        console.log("⛓️  ON-CHAIN USDC BALANCE");
+        console.log(`⛓️  ON-CHAIN ${POLYMARKET_COLLATERAL_LABEL}`);
         console.log("═══════════════════════════════════════");
-        console.log(`EOA USDC: ${eoaUsdc.toFixed(6)}`);
-        console.log(`Proxy USDC: ${proxyUsdc.toFixed(6)}`);
+        console.log(`EOA ${POLYMARKET_COLLATERAL_SHORT}: ${eoaUsdc.toFixed(6)}`);
+        console.log(`Proxy ${POLYMARKET_COLLATERAL_SHORT}: ${proxyUsdc.toFixed(6)}`);
         console.log("═══════════════════════════════════════");
     } catch (e) {
-        console.log(`⚠️  Could not fetch on-chain USDC balance: ${e instanceof Error ? e.message : String(e)}`);
+        console.log(`⚠️  Could not fetch on-chain ${POLYMARKET_COLLATERAL_SHORT} balance: ${e instanceof Error ? e.message : String(e)}`);
     }
 }
 

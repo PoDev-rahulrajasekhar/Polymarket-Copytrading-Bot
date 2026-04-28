@@ -6,16 +6,15 @@
  * Usage: npm run start
  */
 
-import { createCredential } from "./security/createCredential";
 import { approveUSDCAllowance, updateClobBalanceAllowance } from "./security/allowance";
 import { getRealTimeDataClient } from "./providers/wssProvider";
 import { getClobClient } from "./providers/clobclient";
 import type { Message } from "@polymarket/real-time-data-client";
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";
-import logger from "wrapped-logger-utils";
-import { AssetType } from "@polymarket/clob-client";
+import logger from "styled-text-logger";
+import { AssetType } from "@polymarket/clob-client-v2";
 import type { TradePayload } from "./utils/types";
-import { env } from "./config/env";
+import { env, POLYMARKET_COLLATERAL_SHORT } from "./config/env";
 import { displayWalletBalance, getAvailableBalance } from "./utils/balance";
 import {
     processTrade,
@@ -41,16 +40,20 @@ async function main() {
     console.log(dryRun ? "Starting WebSocket copy-trade bot (DRY RUN – no orders placed)..." : "Starting WebSocket copy-trade bot (LIVE – orders enabled)...");
     if (dryRun) console.log("⚠️  DRY_RUN=true: Only logging. Set DRY_RUN=false in .env to place real orders.");
     console.log(
-        `  Order: ${env.ORDER_SIZE_IN_TOKENS ? "token amount" : "fixed USDC (config.json)"} | ` +
+        `  Order: ${env.ORDER_SIZE_IN_TOKENS ? "token amount" : `fixed ${POLYMARKET_COLLATERAL_SHORT} (config.json)`} | ` +
             `Wallets: ${targetCount} | Telegram: ${env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? "on" : "off"}`
     );
 
     loadProcessedTrades();
-    await createCredential();
 
     let clobClient: Awaited<ReturnType<typeof getClobClient>> | null = null;
     if (enableCopyTrading) {
-        clobClient = await getClobClient();
+        try {
+            clobClient = await getClobClient();
+        } catch (e) {
+            console.error("Fatal: could not load or create CLOB API credentials.", e);
+            process.exit(1);
+        }
         await displayWalletBalance(clobClient);
         await approveUSDCAllowance();
         await updateClobBalanceAllowance(clobClient);
@@ -106,7 +109,7 @@ async function main() {
                         `Market: ${payload.title || payload.slug} | ` +
                         `Outcome: ${payload.outcome} | ` +
                         `$${payload.price} × size ${payload.size} | ` +
-                        `Config: ${configAmount} → ~$${amountUsdc.toFixed(2)} USDC`
+                        `Config: ${configAmount} → ~$${amountUsdc.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`
                 );
                 console.log(`   [DRY RUN] asset=${payload.asset?.substring(0, 20)}... tx=${payload.transactionHash?.substring(0, 16)}...`);
             } else {
