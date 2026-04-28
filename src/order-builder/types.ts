@@ -1,4 +1,4 @@
-import { Side, OrderType, UserMarketOrder, CreateOrderOptions } from "@polymarket/clob-client";
+import { Side, OrderType, type UserMarketOrderV2, CreateOrderOptions } from "@polymarket/clob-client-v2";
 import type { TradePayload } from "../utils/types";
 
 /**
@@ -17,19 +17,19 @@ export interface CopyTradeOptions {
     sizeMultiplier?: number;
     
     /**
-     * Maximum amount to spend on a BUY order (in USDC)
+     * Maximum amount to spend on a BUY order (Polymarket USD / pUSD).
      * If not set, uses the calculated amount from size and price
      */
     maxAmount?: number;
     
     /**
      * Fixed token amount for BUY (overrides sizeMultiplier/maxAmount when set).
-     * USDC amount = trade.price * orderSizeTokens.
+     * pUSD notional ≈ trade.price * orderSizeTokens.
      */
     orderSizeTokens?: number;
     
     /**
-     * Fixed USDC amount for BUY (fast path, no price calc).
+     * Fixed pUSD amount for BUY (fast path, no price calc).
      * Overrides orderSizeTokens when set.
      */
     orderAmountUsdc?: number;
@@ -48,11 +48,6 @@ export interface CopyTradeOptions {
      * Whether to use negRisk exchange (default: false)
      */
     negRisk?: boolean;
-    
-    /**
-     * Fee rate in basis points (optional)
-     */
-    feeRateBps?: number;
 }
 
 /**
@@ -82,6 +77,6 @@ export interface CopyTradeResult {
     /**
      * The market order that was created
      */
-    marketOrder?: UserMarketOrder;
+    marketOrder?: UserMarketOrderV2;
 }
 

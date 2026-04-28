@@ -4,8 +4,8 @@
  * Stops at the boundary; restarts when the bot buys again.
  */
 
-import { OrderType, Side, AssetType } from "@polymarket/clob-client";
-import type { ClobClient } from "@polymarket/clob-client";
+import { OrderType, Side, AssetType } from "@polymarket/clob-client-v2";
+import type { ClobClient } from "@polymarket/clob-client-v2";
 import { getClobClient } from "../providers/clobclient";
 import { env } from "../config/env";
 import { validateSellOrderBalance } from "../utils/balance";

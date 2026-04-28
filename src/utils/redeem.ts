@@ -3,7 +3,7 @@ import { hexZeroPad } from "@ethersproject/bytes";
 import { Wallet } from "@ethersproject/wallet";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { Contract } from "@ethersproject/contracts";
-import { Chain, getContractConfig } from "@polymarket/clob-client";
+import { Chain, getContractConfig } from "@polymarket/clob-client-v2";
 import { getClobClient } from "../providers/clobclient";
 import Safe from "@safe-global/protocol-kit";
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
@@ -206,7 +206,7 @@ export interface RedeemOptions {
  * Redeem conditional tokens for collateral after a market resolves
  * 
  * This function calls the redeemPositions function on the Conditional Tokens Framework (CTF) contract
- * to redeem winning outcome tokens for their underlying collateral (USDC).
+ * to redeem winning outcome tokens for their underlying collateral (Polymarket USD / pUSD).
  * 
  * For Polymarket binary markets, indexSets should be [1, 2] to redeem both YES and NO outcomes.
  * 

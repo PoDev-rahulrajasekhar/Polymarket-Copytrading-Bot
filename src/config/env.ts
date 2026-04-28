@@ -17,6 +17,13 @@ export type OrderTypeEnv = "FAK" | "FOK";
 /** Polygon mainnet */
 const CHAIN_ID_DEFAULT = 137;
 
+/**
+ * Polymarket CLOB collateral is Polymarket USD (pUSD), not legacy Polygon USDC.e.
+ * Use in logs; env names like ORDER_SIZE_IN_USDC still mean “dollar-denominated collateral”.
+ */
+export const POLYMARKET_COLLATERAL_LABEL = "Polymarket USD (pUSD)";
+export const POLYMARKET_COLLATERAL_SHORT = "pUSD";
+
 function parseNum(value: string | undefined, defaultVal: number): number {
     if (value === undefined || value === "") return defaultVal;
     const n = parseInt(value, 10);
@@ -79,14 +86,14 @@ export const env = {
     },
 
     /**
-     * If true, config.json amounts are token/share counts (USDC = amount × price).
-     * If false, BUY uses available USDC wallet balance (\"all-in\"), ignoring config size.
+     * If true, config.json amounts are token/share counts (pUSD notional ≈ amount × price).
+     * If false, BUY uses available collateral wallet balance (\"all-in\"), ignoring config size.
      */
     get ORDER_SIZE_IN_TOKENS(): boolean {
         return process.env.ORDER_SIZE_IN_TOKENS !== "false";
     },
 
-    /** If true, config.json amounts = fixed USDC. No balance check, no price fetch. Fast path. */
+    /** If true, config.json amounts = fixed pUSD (Polymarket USD). No balance check, no price fetch. Fast path. */
     get ORDER_SIZE_IN_USDC(): boolean {
         return process.env.ORDER_SIZE_IN_USDC === "true";
     },

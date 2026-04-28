@@ -5,13 +5,13 @@
 
 import { resolve } from "path";
 import { writeFileSync, appendFileSync, existsSync, mkdirSync, readFileSync } from "fs";
-import { OrderType, Side, AssetType } from "@polymarket/clob-client";
-import type { ClobClient } from "@polymarket/clob-client";
+import { OrderType, Side, AssetType } from "@polymarket/clob-client-v2";
+import type { ClobClient } from "@polymarket/clob-client-v2";
 import { getClobClient } from "../providers/clobclient";
 import { addHoldings, removeHoldings } from "../utils/holdings";
 import { displayWalletBalance, getAvailableBalance, validateSellOrderBalance } from "../utils/balance";
 import { notifyTelegramTargetTrade } from "../utils/telegram";
-import { env } from "../config/env";
+import { env, POLYMARKET_COLLATERAL_SHORT } from "../config/env";
 import { startMonitoring as riskManagerStart } from "./risk-manager";
 
 const CONFIG_PATH = resolve(process.cwd(), "src/config/config.json");
@@ -423,14 +423,14 @@ export async function processTrade(trade: TradeForProcess): Promise<void> {
     const t = parseFloat(TICK_SIZE);
     // Aggressive prices to prioritize fill: BUY at max (1-tick), SELL at min (tick)
     const orderPrice = side === "BUY" ? clampPrice(1 - t, TICK_SIZE) : clampPrice(t, TICK_SIZE);
-    // config.json value: ORDER_SIZE_IN_TOKENS=true → token amount; else → fixed USDC
+    // config.json value: ORDER_SIZE_IN_TOKENS=true → token amount; else → fixed pUSD
     const orderSizeTokens = side === "BUY" && env.ORDER_SIZE_IN_TOKENS ? configAmount! : undefined;
     let amountUsdc = 0;
     if (side === "BUY") {
         if (env.ORDER_SIZE_IN_TOKENS) {
             amountUsdc = Math.max(1, configAmount! * price);
         } else {
-            // ORDER_SIZE_IN_TOKENS=false: config value = fixed USDC amount
+            // ORDER_SIZE_IN_TOKENS=false: config value = fixed pUSD amount
             amountUsdc = Math.max(1, configAmount!);
         }
     }
@@ -504,7 +504,7 @@ export async function processTrade(trade: TradeForProcess): Promise<void> {
             return;
         }
 
-        console.log(`\n🟢 TRADE - BUY${sourceWalletDisplay} | ${trade.title || trade.slug} | $${amountUsdc.toFixed(2)} USDC`);
+        console.log(`\n🟢 TRADE - BUY${sourceWalletDisplay} | ${trade.title || trade.slug} | $${amountUsdc.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`);
         console.log(`   CLOB price: ${currentPrice} (BUY_THRESHOLD: ${env.BUY_THRESHOLD})`);
         console.log(`   [perf] validation→ready: ${Date.now() - t0}ms`);
 
@@ -520,7 +520,7 @@ export async function processTrade(trade: TradeForProcess): Promise<void> {
             async () => {
                 let orderAmountUsdc = amountUsdc;
                 if (!env.ORDER_SIZE_IN_TOKENS) {
-                    // Fixed USDC from config – no price fetch
+                    // Fixed pUSD from config – no price fetch
                     orderAmountUsdc = amountUsdc;
                     lastAttemptAmountUsdc = amountUsdc;
                 } else if (orderSizeTokens != null && orderSizeTokens > 0) {
@@ -558,7 +558,7 @@ export async function processTrade(trade: TradeForProcess): Promise<void> {
             },
             ORDER_RETRY_ATTEMPTS,
             ORDER_RETRY_DELAY_MS,
-            `BUY $${amountUsdc.toFixed(2)} USDC`
+            `BUY $${amountUsdc.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`
         );
 
         const isSuccess =
@@ -668,7 +668,7 @@ async function executeBuyFromPending(client: ClobClient, pending: PendingBuy, cu
             },
             ORDER_RETRY_ATTEMPTS,
             ORDER_RETRY_DELAY_MS,
-            `Pending BUY $${amountUsdc.toFixed(2)} USDC`
+            `Pending BUY $${amountUsdc.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`
         );
         const isSuccess =
             response &&

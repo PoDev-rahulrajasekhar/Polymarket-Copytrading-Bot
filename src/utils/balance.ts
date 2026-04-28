@@ -1,4 +1,5 @@
-import { ClobClient, AssetType, type OpenOrder } from "@polymarket/clob-client";
+import { ClobClient, AssetType, type OpenOrder } from "@polymarket/clob-client-v2";
+import { POLYMARKET_COLLATERAL_LABEL, POLYMARKET_COLLATERAL_SHORT } from "../config/env";
 
 const CLOB_DECIMALS = 6;
 
@@ -47,7 +48,7 @@ export async function getAvailableBalance(
             const isBuyOrder = orderSide === "BUY";
             const isSellOrder = orderSide === "SELL";
 
-            // For BUY orders, reserve USDC (COLLATERAL)
+            // For BUY orders, reserve collateral (pUSD / COLLATERAL)
             // For SELL orders, reserve tokens (CONDITIONAL)
             if (
                 (assetType === AssetType.COLLATERAL && isBuyOrder) ||
@@ -89,11 +90,13 @@ export async function displayWalletBalance(client: ClobClient): Promise<void> {
         const allowance = parseClobAmount(balanceResponse.allowance);
 
         console.log("═══════════════════════════════════════");
-        console.log("💰 WALLET BALANCE & ALLOWANCE");
+        console.log(`💰 WALLET BALANCE & ALLOWANCE (${POLYMARKET_COLLATERAL_LABEL})`);
         console.log("═══════════════════════════════════════");
-        console.log(`USDC Balance: ${balance.toFixed(6)}`);
-        console.log(`USDC Allowance: ${allowance.toFixed(6)}`);
-        console.log(`Available: ${balance.toFixed(6)} (Balance: ${balance.toFixed(6)}, Allowance: ${allowance.toFixed(6)})`);
+        console.log(`${POLYMARKET_COLLATERAL_SHORT} balance: ${balance.toFixed(6)}`);
+        console.log(`${POLYMARKET_COLLATERAL_SHORT} allowance: ${allowance.toFixed(6)}`);
+        console.log(
+            `Available: ${balance.toFixed(6)} (Balance: ${balance.toFixed(6)}, Allowance: ${allowance.toFixed(6)})`
+        );
         console.log("═══════════════════════════════════════");
     } catch (error) {
         console.log(`Failed to get wallet balance: ${error instanceof Error ? error.message : String(error)}`);
@@ -122,10 +125,10 @@ export async function validateBuyOrderBalance(
             console.log("═══════════════════════════════════════");
             console.log("⚠️  INSUFFICIENT BALANCE/ALLOWANCE");
             console.log("═══════════════════════════════════════");
-            console.log(`Required: ${requiredAmount.toFixed(6)} USDC`);
-            console.log(`Available: ${available.toFixed(6)} USDC`);
-            console.log(`Balance: ${balance.toFixed(6)} USDC`);
-            console.log(`Allowance: ${allowance.toFixed(6)} USDC`);
+            console.log(`Required: ${requiredAmount.toFixed(6)} ${POLYMARKET_COLLATERAL_SHORT}`);
+            console.log(`Available: ${available.toFixed(6)} ${POLYMARKET_COLLATERAL_SHORT}`);
+            console.log(`Balance: ${balance.toFixed(6)} ${POLYMARKET_COLLATERAL_SHORT}`);
+            console.log(`Allowance: ${allowance.toFixed(6)} ${POLYMARKET_COLLATERAL_SHORT}`);
             console.log("═══════════════════════════════════════");
         }
 

@@ -4,12 +4,12 @@ import { parseUnits } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { Contract } from "@ethersproject/contracts";
-import { Chain, AssetType, ClobClient } from "@polymarket/clob-client";
-import { getContractConfig } from "@polymarket/clob-client";
-import { env, getRpcUrl } from "../config/env";
+import { Chain, AssetType, ClobClient } from "@polymarket/clob-client-v2";
+import { getContractConfig } from "@polymarket/clob-client-v2";
+import { env, getRpcUrl, POLYMARKET_COLLATERAL_LABEL } from "../config/env";
 
-// Minimal USDC ERC20 ABI
-const USDC_ABI = [
+// Minimal ERC20 ABI (approve / allowance) for CLOB collateral token (pUSD)
+const COLLATERAL_ERC20_ABI = [
     "function approve(address spender, uint256 amount) external returns (bool)",
     "function allowance(address owner, address spender) external view returns (uint256)",
 ];
@@ -22,8 +22,8 @@ const CTF_ABI = [
 
 
 /**
- * Approve USDC to Polymarket contracts (maximum allowance)
- * Approves USDC for both ConditionalTokens and Exchange contracts
+ * Approve Polymarket USD (pUSD) collateral to Polymarket contracts (max allowance).
+ * Approves the CTF collateral token for ConditionalTokens, Exchange, and (if NEG_RISK) neg-risk contracts.
  */
 export async function approveUSDCAllowance(): Promise<void> {
     const privateKey = env.PRIVATE_KEY;
@@ -39,13 +39,12 @@ export async function approveUSDCAllowance(): Promise<void> {
     const wallet = new Wallet(privateKey, provider);
     
     const address = await wallet.getAddress();
-    console.log(`Approving USDC allowances for address: ${address}, chainId: ${chainId}`);
-    console.log(`USDC Contract: ${contractConfig.collateral}`);
+    console.log(`Approving ${POLYMARKET_COLLATERAL_LABEL} allowances for address: ${address}, chainId: ${chainId}`);
+    console.log(`${POLYMARKET_COLLATERAL_LABEL} token: ${contractConfig.collateral}`);
     console.log(`ConditionalTokens Contract: ${contractConfig.conditionalTokens}`);
     console.log(`Exchange Contract: ${contractConfig.exchange}`);
 
-    // Create USDC contract instance
-    const usdcContract = new Contract(contractConfig.collateral, USDC_ABI, wallet);
+    const collateralContract = new Contract(contractConfig.collateral, COLLATERAL_ERC20_ABI, wallet);
 
     // Configure gas options
     let gasOptions: { gasPrice?: BigNumber; gasLimit?: number } = {};
@@ -63,28 +62,26 @@ export async function approveUSDCAllowance(): Promise<void> {
         };
     }
 
-    // Check and approve USDC for ConditionalTokens contract
-    const ctfAllowance = await usdcContract.allowance(address, contractConfig.conditionalTokens);
+    const ctfAllowance = await collateralContract.allowance(address, contractConfig.conditionalTokens);
     if (!ctfAllowance.eq(MaxUint256)) {
         console.log(`Current CTF allowance: ${ctfAllowance.toString()}, setting to MaxUint256...`);
-        const tx = await usdcContract.approve(contractConfig.conditionalTokens, MaxUint256, gasOptions);
+        const tx = await collateralContract.approve(contractConfig.conditionalTokens, MaxUint256, gasOptions);
         console.log(`Transaction hash: ${tx.hash}`);
         await tx.wait();
-        console.log("✅ USDC approved for ConditionalTokens contract");
+        console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} approved for ConditionalTokens contract`);
     } else {
-        console.log("✅ USDC already approved for ConditionalTokens contract (MaxUint256)");
+        console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} already approved for ConditionalTokens contract (MaxUint256)`);
     }
 
-    // Check and approve USDC for Exchange contract
-    const exchangeAllowance = await usdcContract.allowance(address, contractConfig.exchange);
+    const exchangeAllowance = await collateralContract.allowance(address, contractConfig.exchange);
     if (!exchangeAllowance.eq(MaxUint256)) {
         console.log(`Current Exchange allowance: ${exchangeAllowance.toString()}, setting to MaxUint256...`);
-        const tx = await usdcContract.approve(contractConfig.exchange, MaxUint256, gasOptions);
+        const tx = await collateralContract.approve(contractConfig.exchange, MaxUint256, gasOptions);
         console.log(`Transaction hash: ${tx.hash}`);
         await tx.wait();
-        console.log("✅ USDC approved for Exchange contract");
+        console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} approved for Exchange contract`);
     } else {
-        console.log("✅ USDC already approved for Exchange contract (MaxUint256)");
+        console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} already approved for Exchange contract (MaxUint256)`);
     }
 
     // Check and approve ConditionalTokens (ERC1155) for Exchange contract
@@ -103,24 +100,22 @@ export async function approveUSDCAllowance(): Promise<void> {
 
     const negRisk = env.NEG_RISK;
     if (negRisk) {
-        // Approve USDC for NegRiskAdapter
-        const negRiskAdapterAllowance = await usdcContract.allowance(address, contractConfig.negRiskAdapter);
+        const negRiskAdapterAllowance = await collateralContract.allowance(address, contractConfig.negRiskAdapter);
         if (!negRiskAdapterAllowance.eq(MaxUint256)) {
             console.log(`Current NegRiskAdapter allowance: ${negRiskAdapterAllowance.toString()}, setting to MaxUint256...`);
-            const tx = await usdcContract.approve(contractConfig.negRiskAdapter, MaxUint256, gasOptions);
+            const tx = await collateralContract.approve(contractConfig.negRiskAdapter, MaxUint256, gasOptions);
             console.log(`Transaction hash: ${tx.hash}`);
             await tx.wait();
-            console.log("✅ USDC approved for NegRiskAdapter");
+            console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} approved for NegRiskAdapter`);
         }
 
-        // Approve USDC for NegRiskExchange
-        const negRiskExchangeAllowance = await usdcContract.allowance(address, contractConfig.negRiskExchange);
+        const negRiskExchangeAllowance = await collateralContract.allowance(address, contractConfig.negRiskExchange);
         if (!negRiskExchangeAllowance.eq(MaxUint256)) {
             console.log(`Current NegRiskExchange allowance: ${negRiskExchangeAllowance.toString()}, setting to MaxUint256...`);
-            const tx = await usdcContract.approve(contractConfig.negRiskExchange, MaxUint256, gasOptions);
+            const tx = await collateralContract.approve(contractConfig.negRiskExchange, MaxUint256, gasOptions);
             console.log(`Transaction hash: ${tx.hash}`);
             await tx.wait();
-            console.log("✅ USDC approved for NegRiskExchange");
+            console.log(`✅ ${POLYMARKET_COLLATERAL_LABEL} approved for NegRiskExchange`);
         }
 
         // Approve ConditionalTokens for NegRiskExchange
@@ -153,9 +148,9 @@ export async function approveUSDCAllowance(): Promise<void> {
  */
 export async function updateClobBalanceAllowance(client: ClobClient): Promise<void> {
     try {
-        console.log("Updating CLOB API balance allowance for USDC...");
+        console.log(`Updating CLOB API balance allowance for ${POLYMARKET_COLLATERAL_LABEL}...`);
         await client.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
-        console.log("✅ CLOB API balance allowance updated for USDC");
+        console.log(`✅ CLOB API balance allowance updated for ${POLYMARKET_COLLATERAL_LABEL}`);
     } catch (error) {
         console.log(`Failed to update CLOB balance allowance: ${error instanceof Error ? error.message : String(error)}`);
         throw error;

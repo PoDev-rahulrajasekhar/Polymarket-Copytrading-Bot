@@ -6,14 +6,13 @@
  */
 
 import { writeFileSync, existsSync } from "fs";
-import { AssetType } from "@polymarket/clob-client";
-import type { ClobClient } from "@polymarket/clob-client";
+import { AssetType } from "@polymarket/clob-client-v2";
+import type { ClobClient } from "@polymarket/clob-client-v2";
 import { getClobClient } from "./providers/clobclient";
-import logger from "wrapped-logger-utils";
-import { createCredential } from "./security/createCredential";
+import logger from "./logger";
 import { approveUSDCAllowance, updateClobBalanceAllowance } from "./security/allowance";
 import { displayWalletBalance, getAvailableBalance } from "./utils/balance";
-import { env } from "./config/env";
+import { env, POLYMARKET_COLLATERAL_SHORT } from "./config/env";
 import {
     processTrade,
     refreshCachedAvailableUsdc,
@@ -116,7 +115,9 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`Wallets: ${TARGET_WALLETS.length} | Order: ${env.ORDER_SIZE_IN_TOKENS ? "token amount" : "fixed USDC (config.json)"}`);
+    console.log(
+        `Wallets: ${TARGET_WALLETS.length} | Order: ${env.ORDER_SIZE_IN_TOKENS ? "token amount" : `fixed ${POLYMARKET_COLLATERAL_SHORT} (config.json)`}`
+    );
     console.log(`Mode: ${env.DRY_RUN ? "DRY RUN (no orders)" : "LIVE (orders enabled)"} | Poll: ${POLL_INTERVAL_MS / 1000}s | Telegram: ${env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? "on" : "off"}`);
     if (env.DRY_RUN) console.log("⚠️  DRY_RUN=true: Set DRY_RUN=false in .env to place real orders.");
     console.log(`Log: ${LOG_FILE}\n`);
@@ -132,8 +133,6 @@ Wallets: ${TARGET_WALLETS.length} | Poll: ${POLL_INTERVAL_MS / 1000}s
 ================================================================================\n\n`
         );
     }
-
-    await createCredential();
 
     let client: ClobClient | null = null;
     try {
@@ -159,7 +158,7 @@ Wallets: ${TARGET_WALLETS.length} | Poll: ${POLL_INTERVAL_MS / 1000}s
                 console.log("❌ Wallet balance is zero");
                 process.exit(1);
             }
-            console.log(`✅ Balance: $${balance.toFixed(2)} USDC`);
+            console.log(`✅ Balance: $${balance.toFixed(2)} ${POLYMARKET_COLLATERAL_SHORT}`);
         } catch (_) {
             console.log("Balance check failed – continuing");
         }
