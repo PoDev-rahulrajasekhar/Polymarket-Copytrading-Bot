@@ -11,7 +11,7 @@ import { getRealTimeDataClient } from "./providers/wssProvider";
 import { getClobClient } from "./providers/clobclient";
 import type { Message } from "@polymarket/real-time-data-client";
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";
-import logger from "styled-text-logger";
+import logger from "color-logger-console";
 import { AssetType } from "@polymarket/clob-client-v2";
 import type { TradePayload } from "./utils/types";
 import { env, POLYMARKET_COLLATERAL_SHORT } from "./config/env";
